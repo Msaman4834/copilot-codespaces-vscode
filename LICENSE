@@ -1,20 +1,35 @@
-Copyright (c) GitHub and others
+import telegram
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import sqlite3
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
+# جایگزین کنید با توکن واقعی بات خود
+TOKEN = 'YOUR_BOT_TOKEN'
 
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
+# اتصال به پایگاه داده (مثال: SQLite)
+conn = sqlite3.connect('users.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS users (
+              id INTEGER PRIMARY KEY,
+              username TEXT,
+              score INTEGER DEFAULT 0
+            )''')
+conn.commit()
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+def start(update, context):
+    user = update.message.from_user
+    c.execute("INSERT OR IGNORE INTO users VALUES (?, ?, ?)", (user.id, user.username, 0))
+    conn.commit()
+    context.bot.send_message(chat_id=update.effective_chat.id, text="به بازی ستارگان خوش آمدید! برای شروع بازی، روی دکمه ستاره کلیک کنید.")
+
+# ... سایر توابع برای مدیریت کلیک‌ها، دعوت‌ها، جوایز و ...
+
+updater = Updater(TOKEN, use_context=True)
+
+dispatcher = updater.dispatcher
+
+start_handler = CommandHandler('start', start)
+dispatcher.add_handler(start_handler)
+
+# ... سایر هندلرها برای پیام‌ها، دستورات و ...
+
+updater.start_polling()
